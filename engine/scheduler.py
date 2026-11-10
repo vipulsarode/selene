@@ -92,6 +92,11 @@ class Scheduler:
         mark WAITING, put it at the FRONT of waiting."""
         ...
 
+        self.waiting.appendleft(req)
+        req.status = Status.WAITING 
+        self.running.remove(req)
+        self.bm.free(req.req_id)
+
     def update(self, out: SchedulerOutput, new_tokens: dict) -> list[Request]:
         """After the model runs. new_tokens: req_id -> sampled token ID.
         Prefill requests get a token too (prefill samples the first one).
