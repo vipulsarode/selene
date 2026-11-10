@@ -53,6 +53,7 @@ class Scheduler:
     def add_request(self, req: Request) -> None:
         """New requests join the BACK of waiting."""
         ...
+        self.waiting.append(req)
 
     def schedule(self) -> SchedulerOutput:
         """Decide what runs this step. v1: prefill-only OR decode-only.
@@ -73,6 +74,19 @@ class Scheduler:
         """
         ...
 
+        so = SchedulerOutput(prefill=[], decode=[], preempted=[])
+
+        while (len(self.running) < self.max_num_seqs) and (len(self.waiting) > 0) and self.bm.can_allocate(self.waiting[0].num_tokens):
+            req = self.waiting.popleft()
+            self.bm.allocate(req.req_id, req.num_tokens)
+            req.status = Status.RUNNING
+            self.running.append(req)
+            so.prefill.append(req)
+
+        if len(so.prefill) > 0:
+            return so
+
+
     def _preempt(self, req: Request) -> None:
         """Recompute-style: give back its blocks, KEEP its tokens,
         mark WAITING, put it at the FRONT of waiting."""
@@ -88,3 +102,4 @@ class Scheduler:
     def has_unfinished(self) -> bool:
         """Anything in waiting or running? The engine loops while this is True."""
         ...
+        return (len(self.waiting) > 0) or (len(self.running) > 0)
