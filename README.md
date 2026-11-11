@@ -11,7 +11,7 @@ Selene is the serving counterpart to [Helios](#), my from-scratch distributed tr
 | Component | What it does | Status |
 |---|---|---|
 | Block manager | Hands out fixed-size KV cache blocks to requests and tracks which request owns which block | ✅ Done (28 tests) |
-| Scheduler | Decides which requests run each step: admission, continuous batching, preemption | 🔨 Next |
+| Scheduler | Decides which requests run each step: admission, continuous batching, preemption | ✅ Done (23 tests) |
 | KV cache | Preallocated GPU tensors of shape `[num_blocks, block_size, kv_heads, head_dim]` | ⏳ |
 | Model runner | Runs prefill and decode forward passes, reading/writing KV through block tables | ⏳ |
 | HF reference | Greedy generation with Hugging Face Transformers, used as the correctness oracle | ⏳ |
