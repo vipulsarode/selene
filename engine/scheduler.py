@@ -86,6 +86,23 @@ class Scheduler:
         if len(so.prefill) > 0:
             return so
 
+        # safe: victims are always taken from the end
+        for req in self.running:
+
+            while not self.bm.can_append_slot(req.req_id):
+                victim = self.running[-1]    
+                so.preempted.append(victim)
+                self._preempt(victim)
+                if victim is req:
+                    break
+
+            if req.status != Status.RUNNING:
+                continue
+
+            self.bm.append_slot(req.req_id)
+            so.decode.append(req)
+
+        return so
 
     def _preempt(self, req: Request) -> None:
         """Recompute-style: give back its blocks, KEEP its tokens,
@@ -103,6 +120,20 @@ class Scheduler:
         Append each token; if finished -> free blocks, mark FINISHED,
         remove from running. Returns the requests that finished."""
         ...
+
+        finished = []
+
+        for req in out.prefill + out.decode:
+
+            req.output_token_ids.append(new_tokens[req.req_id])
+            if req.is_finished():
+                finished.append(req)
+                req.status = Status.FINISHED 
+                self.bm.free(req.req_id)
+                self.running.remove(req)
+
+        return finished
+
 
     def has_unfinished(self) -> bool:
         """Anything in waiting or running? The engine loops while this is True."""
