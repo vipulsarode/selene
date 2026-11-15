@@ -2,4 +2,5 @@ __pycache__/
 .pytest_cache/
 .DS_Store
 *.pyc
+reference/hf_logits.ptreference/hf_logits.pt
 reference/hf_logits.pt
