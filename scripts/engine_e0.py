@@ -7,6 +7,9 @@ from transformers import AutoModelForCausalLM
 from engine.engine import Engine
 from engine.scheduler import Request
 
+import sys
+DEVICE = sys.argv[1] if len(sys.argv) > 1 else "cpu"
+
 ref = json.load(open("reference/hf_outputs.json"))
 hf = AutoModelForCausalLM.from_pretrained("Qwen/Qwen3-0.6B", dtype=torch.float32)
 hf.eval()
@@ -15,7 +18,7 @@ BLOCK_SIZE = 16
 
 
 def run_all(num_blocks):
-    engine = Engine(hf, num_blocks)
+    engine = Engine(hf, num_blocks, device = DEVICE)
 
     # count preemptions by wrapping the scheduler's _preempt (test-only trick)
     count = {"preempted": 0}

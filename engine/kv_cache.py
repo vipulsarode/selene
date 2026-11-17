@@ -27,18 +27,18 @@ def slot_for(block_table: list[int], pos: int, block_size: int = 16) -> tuple[in
     return (block_table[block_idx], offset)
 
 def slots_for_range(block_table: list[int], start: int, end: int,
-                    block_size: int = 16) -> tuple[torch.Tensor, torch.Tensor]:
+                    block_size: int = 16, device: str = 'cpu') -> tuple[torch.Tensor, torch.Tensor]:
     """Slots for positions start .. end-1, as two 1-D long tensors (block_ids, offsets).
     Prefill writes many tokens at once (start=0, end=prompt length);
     decode writes one (start=pos, end=pos+1)."""
     ...
 
-    positions = torch.arange(start, end)
+    positions = torch.arange(start, end, device=device)
 
     block_idxs = positions // block_size
     offsets = positions % block_size
 
-    return (torch.tensor(block_table)[block_idxs], offsets)
+    return (torch.tensor(block_table, device=device)[block_idxs], offsets)
 
 
 # ---------------------------------------------------------------------------
@@ -54,6 +54,7 @@ class KVCache:
         self.config = config
         self.num_blocks = num_blocks
         self.block_size = block_size
+        self.device = device
         shape = (num_blocks, block_size, config.num_key_value_heads, config.head_dim)
         
         self.k = [torch.zeros(shape, dtype=dtype, device=device)

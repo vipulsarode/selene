@@ -37,7 +37,8 @@ class ModelRunner:
         Also save from the config: num_heads, num_kv_heads, head_dim."""
         ...
 
-        self.hf_model = hf_model
+        self.device = kv_cache.device
+        self.hf_model = hf_model.to(self.device)
         self.kv_cache = kv_cache
 
         self.num_heads = hf_model.config.num_attention_heads
@@ -61,10 +62,10 @@ class ModelRunner:
         ...
 
         n = len(token_ids)
-        positions = torch.arange(n)
-        h = self.hf_model.model.embed_tokens(torch.tensor(token_ids))
+        positions = torch.arange(n, device=self.device)
+        h = self.hf_model.model.embed_tokens(torch.tensor(token_ids, device=self.device))
         cos, sin = self.hf_model.model.rotary_emb(h.unsqueeze(0), positions.unsqueeze(0))
-        block_ids, offsets = slots_for_range(block_table, 0, n)
+        block_ids, offsets = slots_for_range(block_table, 0, n, device=self.device)
         for layer_idx in range(len(self.hf_model.model.layers)): 
             h = self._layer(layer_idx, h, cos, sin, block_ids, offsets,
                                              block_table, n, causal=True)
@@ -75,9 +76,9 @@ class ModelRunner:
 
     @torch.inference_mode()
     def decode(self, token_id: int, position: int, block_table: list[int]) -> int:
-        h = self.hf_model.model.embed_tokens(torch.tensor([token_id]))
-        cos, sin = self.hf_model.model.rotary_emb(h.unsqueeze(0), torch.tensor([position]).unsqueeze(0))
-        block_ids, offsets = slots_for_range(block_table, position, position+1)
+        h = self.hf_model.model.embed_tokens(torch.tensor([token_id], device=self.device))
+        cos, sin = self.hf_model.model.rotary_emb(h.unsqueeze(0), torch.tensor([position], device=self.device).unsqueeze(0))
+        block_ids, offsets = slots_for_range(block_table, position, position+1, device=self.device)
         for layer_idx in range(len(self.hf_model.model.layers)): 
             h = self._layer(layer_idx, h, cos, sin, block_ids, offsets,
                                              block_table, position+1, causal=False)

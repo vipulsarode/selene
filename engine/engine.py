@@ -10,12 +10,12 @@ from engine.scheduler import Scheduler
 
 
 class Engine:
-    def __init__(self, hf_model, num_blocks, max_num_seqs=64):
+    def __init__(self, hf_model, num_blocks, max_num_seqs=64, device="cpu"):
         """Build the four pieces: BlockManager, KVCache, ModelRunner, Scheduler.
         The KVCache and the BlockManager must agree on num_blocks."""
 
         self.bm = BlockManager(num_blocks)
-        self.kv = KVCache(hf_model.config, num_blocks)
+        self.kv = KVCache(hf_model.config, num_blocks, device=device)
         self.mr = ModelRunner(hf_model, self.kv)     
         self.scheduler = Scheduler(self.bm, max_num_seqs) 
 
